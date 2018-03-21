@@ -22,7 +22,7 @@ bl_info = {
     "name": "Smart Config",
     "description": "Save your Blender configuration, including installed addons",
     "author": "Samy Tichadou (tonton)",
-    "version": (1, 0, 0),
+    "version": (1, 0, 1),
     "blender": (2, 79, 0),
     "location": "Import-Export Menus",
     "wiki_url": "https://github.com/samytichadou/SMART-CONFIG_blender_addon/tree/v0.1",

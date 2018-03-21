@@ -67,6 +67,7 @@ def smartconfig_export_config(filepath, context, include_startup_file, include_b
             'io_import_images_as_planes','io_anim_nuke_chan','object_fracture_cell','object_fracture','node_wrangler','animation_animall','object_cloud_gen','development_icon_get',
             'ui_layer_manager','space_view3d_pie_menus','space_view3d_stored_views','archipack','measureit','mesh_f2','rigify','space_view3d_copy_attributes','io_import_gimp_image_to_scene',
             'netrender']
+    wrong=[]
     for f in addon_preferences.exception_list.split(","):
         exception.append(f)
     # clean old files
@@ -95,19 +96,25 @@ def smartconfig_export_config(filepath, context, include_startup_file, include_b
             if e==mod_name:
                 chk3=1
         if chk3==0:
-            nfile.write(mod_name+"\n")
-            mod = sys.modules[mod_name]
-            path_s=os.path.abspath(mod.__file__)
-            #single file addon
-            if "\\" not in path_s.split("addons\\")[1]:
-                path_d=os.path.join(addondir, (path_s.split("addons\\")[1]))
-                shutil.copy2(path_s, path_d)
-            #multi file addon
-            else:
-                folder_name=(path_s.split("addons\\")[1]).split('\\')[0]
-                path_fs=os.path.dirname(path_s)
-                path_fd=os.path.join(addondir,folder_name)
-                shutil.copytree(path_fs, path_fd)
+            chk4=0
+            try:
+                mod = sys.modules[mod_name]
+                chk4=1
+            except KeyError:
+                wrong.append(mod_name)
+            if chk4==1:
+                nfile.write(mod_name+"\n")
+                path_s=os.path.abspath(mod.__file__)
+                #single file addon
+                if os.sep not in path_s.split("addons"+os.sep)[1]:
+                    path_d=os.path.join(addondir, (path_s.split("addons"+os.sep)[1]))
+                    shutil.copy2(path_s, path_d)
+                #multi file addon
+                else:
+                    folder_name=(path_s.split("addons"+os.sep)[1]).split(os.sep)[0]
+                    path_fs=os.path.dirname(path_s)
+                    path_fd=os.path.join(addondir,folder_name)
+                    shutil.copytree(path_fs, path_fd)
         update_progress_console(job, nb/total)
     #close csv
     nfile.close()
@@ -149,6 +156,18 @@ def smartconfig_export_config(filepath, context, include_startup_file, include_b
     
     print()
     print('Smart Config warning : Export Completed')
+    #error reporting
+    if len(wrong)!=0:
+        if addon_preferences.errors_report==True:
+            error=os.path.join(os.path.dirname(filepath), (os.path.basename(filepath).split(".sc")[0]+"_errors.txt"))
+            errorfile = open(error, "w")
+            errorfile.write("PROBLEMATIC'S ADDONS :\n\n")
+            for a in wrong:
+                errorfile.write(a+"\n")
+            errorfile.close()
+        for a in wrong:
+            print('Smart Config warning : Addon Problem with - '+a)
+            
     return {'FINISHED'} 
     
 ### EXPORT CONFIGURATION MENU
