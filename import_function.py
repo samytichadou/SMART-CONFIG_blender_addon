@@ -4,13 +4,12 @@ import sys
 import shutil
 import csv
 import addon_utils
-import distutils.dir_util
 import stat
 
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import IntProperty, CollectionProperty , StringProperty , BoolProperty, EnumProperty
 
-from .functions import update_progress_console, change_permissions_recursive
+from .functions import update_progress_console, change_permissions_recursive, recursive_copy_dir_tree
 
 ### Import Preset Operator ###
 class SmartConfig_Import(bpy.types.Operator, ImportHelper):
@@ -177,22 +176,15 @@ def smartconfig_import_config(filepath, context, import_startup_file, install_us
                 if import_presets==True:
                     path_p=os.path.join(temp, "presets")
                     if os.path.isdir(path_p)==True:
-                        for file in os.listdir(path_p):
-                            if os.path.isdir(os.path.join(path_p,file))==True:
-                                path_s=os.path.join(path_p, file)
-                                path_d=os.path.join(os.path.join(user_path, "scripts"),"presets")
-                                distutils.dir_util.copy_tree(path_s, path_d)
+                        path_d=os.path.join(os.path.join(user_path, "scripts"),"presets")
+                        recursive_copy_dir_tree(path_p, path_d)
                         print('Smart Config warning : Preset Folders installed')
                 # copy config folders
                 if import_config_folders==True:
                     path_p=os.path.join(temp, "config")
                     if os.path.isdir(path_p)==True:
                         config_d=os.path.join(user_path, "config")
-                        for file in os.listdir(path_p):
-                            if os.path.isdir(os.path.join(path_p,file))==True:
-                                path_s=os.path.join(path_p, file)
-                                path_d=os.path.join(config_d, file)
-                                distutils.dir_util.copy_tree(path_s, path_d)
+                        recursive_copy_dir_tree(path_p, config_d)
                         print('Smart Config warning : Config Folders installed')
             try:
                 shutil.rmtree(temp)
