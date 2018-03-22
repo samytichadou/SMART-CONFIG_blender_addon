@@ -22,13 +22,12 @@ bl_info = {
     "name": "Smart Config",
     "description": "Save your Blender configuration, including installed addons",
     "author": "Samy Tichadou (tonton)",
-    "version": (1, 0, 1),
+    "version": (1, 0, 2),
     "blender": (2, 79, 0),
     "location": "Import-Export Menus",
     "wiki_url": "https://github.com/samytichadou/SMART-CONFIG_blender_addon/tree/v0.1",
     "tracker_url": "https://github.com/samytichadou/SMART-CONFIG_blender_addon/issues/new",  
     "category": "Import-Export" }
-
 
 import bpy
 
@@ -51,7 +50,6 @@ from .import_function import smart_config_menu_import_config
 import traceback
 
 def register():
-        
     try: bpy.utils.register_module(__name__)
     except: traceback.print_exc()
 

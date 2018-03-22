@@ -12,3 +12,13 @@ def update_progress_console(job_title, progress):
     if progress >= 1: msg += " DONE\r\n"
     sys.stdout.write(msg)
     sys.stdout.flush()
+    
+def change_permissions_recursive(path, mode):
+    if os.path.isfile(path)==True:
+        os.chmod(path, mode)
+    elif os.path.isdir(path)==True:
+        for root, dirs, files in os.walk(path, topdown=False):
+            for dir in [os.path.join(root,d) for d in dirs]:
+                os.chmod(dir, mode)
+        for file in [os.path.join(root, f) for f in files]:
+                os.chmod(file, mode)
