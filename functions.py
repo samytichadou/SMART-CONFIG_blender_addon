@@ -2,6 +2,7 @@ import bpy
 import sys
 import addon_utils
 import os
+import shutil
 
 from .addon_prefs import get_addon_preferences
 
@@ -22,3 +23,21 @@ def change_permissions_recursive(path, mode):
                 os.chmod(dir, mode)
         for file in [os.path.join(root, f) for f in files]:
                 os.chmod(file, mode)
+
+def recursive_copy_dir_tree(sourceRoot, destRoot):
+    if not os.path.exists(destRoot):
+        return False
+    ok = True
+    for path, dirs, files in os.walk(sourceRoot):
+        relPath = os.path.relpath(path, sourceRoot)
+        destPath = os.path.join(destRoot, relPath)
+        if not os.path.exists(destPath):
+            os.makedirs(destPath)
+        for file in files:
+            srcFile = os.path.join(path, file)
+            destFile = os.path.join(destRoot,os.path.relpath((os.path.join(path, file)), sourceRoot))
+            if os.path.isfile(destFile):
+                ok = False
+                continue
+            shutil.copy2(srcFile, destFile)
+    return{'FINISHED'}
