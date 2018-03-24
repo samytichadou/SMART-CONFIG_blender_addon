@@ -9,6 +9,11 @@ from bpy.props import IntProperty, CollectionProperty , StringProperty , BoolPro
 from .addon_prefs import get_addon_preferences
 from .functions import update_progress_console, change_permissions_recursive
 
+### Addons List Props ###
+class SmartConfig_Addons_List(bpy.types.PropertyGroup):
+    name = StringProperty(name="Module", default="")
+    to_avoid = BoolProperty(name="Avoid this addon", default=False)
+
 ### Export Config Operator ###
 class SmartConfig_Export(bpy.types.Operator, ExportHelper):
     bl_idname = "smartconfig.export_config"
@@ -43,6 +48,35 @@ class SmartConfig_Export(bpy.types.Operator, ExportHelper):
             description="Include Blender Configuration Folders in Export (some addons use these to save preferences...)",
             default=False,
             )
+    include_datafiles_folders = BoolProperty(
+            name="Include Datafiles Folders",
+            description="Include Blender Datafiles Folders in Export (some addons use these to save presets...)",
+            default=False,
+            )
+    exclude_addons = StringProperty(
+            name="Addons to exclude",
+            description="Addon Modules to exclude for this export, separated with a comma",
+            default="",
+            )
+    addons_list = CollectionProperty(type=SmartConfig_Addons_List)
+    show_list = BoolProperty(
+            name="Show list of Addons",
+            description="Show list of Addons and select those to be excluded from Export",
+            default=False,
+            )
+         
+    
+    def __init__(self):
+        addon_preferences = get_addon_preferences()
+        for mod_name in bpy.context.user_preferences.addons.keys():
+            if mod_name not in addon_preferences.exception_list and 'SMART-CONFIG' not in mod_name:
+                if addon_preferences.use_trunk_exception==True:
+                    if mod_name not in addon_preferences.trunk_exception:
+                        new=self.addons_list.add()
+                        new.name=mod_name
+                else:
+                    new=self.addons_list.add()
+                    new.name=mod_name
     
     def draw(self, context):
         layout = self.layout
@@ -54,22 +88,37 @@ class SmartConfig_Export(bpy.types.Operator, ExportHelper):
         box.prop(self, 'include_users_prefs')
         box.prop(self, 'include_presets')
         box.prop(self, 'include_config_folders')
-    
+        box.prop(self, 'include_datafiles_folders')
+        box2 = box.box()
+        row=box2.row(align=True)
+        if self.show_list==False:
+            row.prop(self, 'show_list', text='', icon='TRIA_RIGHT', emboss=False)
+        else:
+            row.prop(self, 'show_list', text='', icon='TRIA_DOWN', emboss=False)
+        row.label('Addons to exclude')
+        row.operator('smartconfig.print_addons', text='', icon='INFO')
+        if self.show_list==True:
+            col=box2.column(align=True)
+            for n in self.addons_list:
+                row=col.row(align=True)
+                row.label(n.name)
+                row.prop(n, 'to_avoid', text='')
+        
     def execute(self, context):
-        return smartconfig_export_config(self.filepath, context, self.include_startup_file, self.include_bookmarks, self.include_users_prefs, self.include_presets, self.include_config_folders)
+        return smartconfig_export_config(self.filepath, context, self.include_datafiles_folders, self.addons_list, self.include_startup_file, self.include_bookmarks, self.include_users_prefs, self.include_presets, self.include_config_folders)
     
 
 ### Export function ###
-def smartconfig_export_config(filepath, context, include_startup_file, include_bookmarks, include_users_prefs, include_presets, include_config_folders):
+def smartconfig_export_config(filepath, context, include_datafiles_folders, addons_list, include_startup_file, include_bookmarks, include_users_prefs, include_presets, include_config_folders):
     addon_preferences = get_addon_preferences()
-    exception=['smart_config','cycles','io_scene_3ds','io_scene_fbx','io_anim_bvh','io_mesh_ply','io_scene_obj','io_scene_x3d','io_mesh_stl','io_mesh_uv_layout','io_curve_svg',
-            'mesh_looptools','blender_id','io_export_after_effects','add_curve_extra_objects','add_curve_ivygen','add_curve_sapling','add_mesh_extra_objects','io_sequencer_edl',
-            'io_import_images_as_planes','io_anim_nuke_chan','object_fracture_cell','object_fracture','node_wrangler','animation_animall','object_cloud_gen','development_icon_get',
-            'ui_layer_manager','space_view3d_pie_menus','space_view3d_stored_views','archipack','measureit','mesh_f2','rigify','space_view3d_copy_attributes','io_import_gimp_image_to_scene',
-            'netrender']
+    exception=[]
     wrong=[]
-    for f in addon_preferences.exception_list.split(","):
-        exception.append(f)
+    if addon_preferences.use_trunk_exception==True:
+        for f in addon_preferences.trunk_exception.split(","):
+            exception.append(f)
+    if addon_preferences.exception_list!="":
+        for f in addon_preferences.exception_list.split(","):
+            exception.append(f)
         
     # clean old files
     chk_p=0
@@ -112,9 +161,16 @@ def smartconfig_export_config(filepath, context, include_startup_file, include_b
         for mod_name in bpy.context.user_preferences.addons.keys():
             nb+=1
             chk3=0
-            for e in exception:
-                if e==mod_name:
-                    chk3=1
+            if 'SMART-CONFIG' in mod_name:
+                chk3=1
+            else:
+                for a in addons_list:
+                    if a.to_avoid==True and a.name==mod_name:
+                        chk3=1
+                if chk3==0:
+                    for e in exception:
+                        if e==mod_name:
+                            chk3=1
             if chk3==0:
                 chk4=0
                 try:
@@ -157,6 +213,11 @@ def smartconfig_export_config(filepath, context, include_startup_file, include_b
         if include_presets==True:
             path_s=os.path.join(os.path.join(user_path, "scripts"),"presets")
             path_d=os.path.join(tempdir, "presets")
+            shutil.copytree(path_s, path_d)
+        # copy datafiles folder
+        if include_datafiles_folders==True:
+            path_s=os.path.join(user_path, "datafiles")
+            path_d=os.path.join(tempdir, "datafiles")
             shutil.copytree(path_s, path_d)
         # copy config folders
         if include_config_folders==True:

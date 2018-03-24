@@ -41,3 +41,13 @@ def recursive_copy_dir_tree(sourceRoot, destRoot):
                 continue
             shutil.copy2(srcFile, destFile)
     return{'FINISHED'}
+
+def print_addon_modules(self, context):
+    prefs=addon_preferences = get_addon_preferences()
+    print()
+    print("Smart Config warning : List of activated Addons Modules")
+    print()
+    for mod_name in bpy.context.user_preferences.addons.keys():
+        if mod_name not in prefs.exception_list and mod_name not in prefs.trunk_exception:
+            print("    "+mod_name)
+    return{'FINISHED'}

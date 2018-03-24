@@ -50,6 +50,11 @@ class SmartConfig_Import(bpy.types.Operator, ImportHelper):
             description="Install Blender Configuration Folders if available (some addons use these to save preferences...)",
             default=True,
             )
+    import_datafiles_folders = BoolProperty(
+            name="Install Datafiles Folders",
+            description="Install Blender Datafiles Folders in Export (some addons use these to save presets...)",
+            default=True,
+            )
     
     #### DRAW ####
     def draw(self, context):
@@ -63,12 +68,13 @@ class SmartConfig_Import(bpy.types.Operator, ImportHelper):
         box.prop(self, 'import_users_prefs')
         box.prop(self, 'import_presets')
         box.prop(self, 'import_config_folders')
+        box.prop(self, 'import_datafiles_folders')
     
     def execute(self, context):
-        return smartconfig_import_config(self.filepath, context, self.import_startup_file, self.install_userfolder, self.import_bookmarks, self.import_users_prefs, self.import_presets, self.import_config_folders)
+        return smartconfig_import_config(self.filepath, context, self.import_datafiles_folders, self.import_startup_file, self.install_userfolder, self.import_bookmarks, self.import_users_prefs, self.import_presets, self.import_config_folders)
     
 ### Import function ###
-def smartconfig_import_config(filepath, context, import_startup_file, install_userfolder, import_bookmarks, import_users_prefs, import_presets, import_config_folders):
+def smartconfig_import_config(filepath, context, import_datafiles_folders, import_startup_file, install_userfolder, import_bookmarks, import_users_prefs, import_presets, import_config_folders):
     temp=os.path.join(os.path.dirname(filepath), "_sc_temp_")
     chk_p=0
     wrong=[]
@@ -186,6 +192,14 @@ def smartconfig_import_config(filepath, context, import_startup_file, install_us
                         config_d=os.path.join(user_path, "config")
                         recursive_copy_dir_tree(path_p, config_d)
                         print('Smart Config warning : Config Folders installed')
+                # copy datafiles folder
+                if import_datafiles_folders==True:
+                    path_p=os.path.join(temp, "datafiles")
+                    if os.path.isdir(path_p)==True:
+                        path_d=os.path.join(user_path, "datafiles")
+                        recursive_copy_dir_tree(path_p, path_d)
+                        print('Smart Config warning : Datafiles Folders installed')
+                        
             try:
                 shutil.rmtree(temp)
             except:
