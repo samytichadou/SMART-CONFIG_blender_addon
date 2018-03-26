@@ -5,3 +5,6 @@ Install and active them by just importing this file, this addon makes it easy to
 
 The release page:
 https://github.com/samytichadou/SMART-CONFIG_blender_addon/releases
+
+A little howto/demo video :
+https://www.youtube.com/watch?v=vpWGHHuyvRc
